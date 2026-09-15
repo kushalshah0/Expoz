@@ -9,16 +9,13 @@ const server = createServer(app)
 const wss = new WebSocketServer({ noServer: true })
 
 const BASE_URL = process.env.BASE_URL || 'https://expoz.onrender.com'
-const APP_URL = process.env.APP_URL
 
 const clients = new Map()
 
 // keep render free tier alive
-if (APP_URL) {
-  setInterval(() => {
-    https.get(APP_URL).on('error', () => {})
-  }, 14 * 60 * 1000)
-}
+setInterval(() => {
+  https.get(BASE_URL).on('error', () => {})
+}, 14 * 60 * 1000)
 
 // websocket upgrade only on /register
 server.on('upgrade', (req, socket, head) => {
