@@ -1,10 +1,11 @@
 {
-  "name": "bore",
+  "name": "expoz",
   "version": "1.0.0",
+  "description": "Expose localhost to the internet instantly",
   "type": "module",
   "main": "index.js",
   "bin": {
-    "bore": "./cli.js"
+    "expoz": "./cli.js"
   },
   "dependencies": {
     "ws": "^8.0.0"

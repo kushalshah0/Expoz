@@ -9,7 +9,7 @@ export function createTunnel({
   const ws = new WebSocket(`${server}/register`)
 
   ws.on('open', () => {
-    console.log('Connecting to tunnel server...')
+    console.log('Connecting to expoz server...')
   })
 
   ws.on('ping', () => ws.pong())
@@ -18,7 +18,7 @@ export function createTunnel({
     const msg = JSON.parse(data)
 
     if (msg.type === 'connected') {
-      console.log(`\nTunnel active at: ${msg.url}\n`)
+      console.log(`\nExposed at: ${msg.url}\n`)
       if (onUrl) onUrl(msg.url)
     }
 
