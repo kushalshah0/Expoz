@@ -1,0 +1,12 @@
+{
+  "name": "bore",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "bore": "./cli.js"
+  },
+  "dependencies": {
+    "ws": "^8.0.0"
+  }
+}
