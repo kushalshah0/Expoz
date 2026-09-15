@@ -18,9 +18,8 @@ export function createTunnel({
     const msg = JSON.parse(data)
 
     if (msg.type === 'connected') {
-      const url = msg.url
-      console.log(`\nTunnel active at: ${url}\n`)
-      if (onUrl) onUrl(url)
+      console.log(`\nTunnel active at: ${msg.url}\n`)
+      if (onUrl) onUrl(msg.url)
     }
 
     if (msg.type === 'request') {
@@ -49,8 +48,7 @@ export function createTunnel({
         })
       })
 
-      req.on('error', (err) => {
-        console.error('Local server error:', err.message)
+      req.on('error', () => {
         ws.send(JSON.stringify({
           type: 'response',
           requestId: msg.requestId,

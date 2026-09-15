@@ -1,18 +1,26 @@
 import express from 'express'
 import { WebSocketServer } from 'ws'
 import { createServer } from 'http'
-import https from 'https'
 import { nanoid } from 'nanoid'
+import https from 'https'
 
 const app = express()
 const server = createServer(app)
 const wss = new WebSocketServer({ noServer: true })
 
-const clients = new Map() // tunnelId -> ws
-
 const BASE_URL = process.env.BASE_URL || 'https://bore-umh2.onrender.com'
+const APP_URL = process.env.APP_URL
 
-// Handle WebSocket upgrade only on /register path
+const clients = new Map()
+
+// keep render free tier alive
+if (APP_URL) {
+  setInterval(() => {
+    https.get(APP_URL).on('error', () => {})
+  }, 14 * 60 * 1000)
+}
+
+// websocket upgrade only on /register
 server.on('upgrade', (req, socket, head) => {
   if (req.url === '/register') {
     wss.handleUpgrade(req, socket, head, (ws) => {
@@ -30,7 +38,7 @@ wss.on('connection', (ws) => {
   ws.send(JSON.stringify({
     type: 'connected',
     tunnelId,
-    url: `${BASE_URL}/t/${tunnelId}`
+    url: `${BASE_URL}/${tunnelId}`
   }))
 
   ws.on('message', (data) => {
@@ -45,23 +53,34 @@ wss.on('connection', (ws) => {
     }
   })
 
-  ws.on('close', () => clients.delete(tunnelId))
-  ws.on('error', () => clients.delete(tunnelId))
+  ws.on('close', () => {
+    clients.delete(tunnelId)
+    console.log(`Client disconnected: ${tunnelId}`)
+  })
 
-  // Keep-alive ping every 25s (Render kills at 30s idle)
+  ws.on('error', () => {
+    clients.delete(tunnelId)
+  })
+
   const ping = setInterval(() => {
     if (ws.readyState === ws.OPEN) ws.ping()
     else clearInterval(ping)
   }, 25000)
+
+  console.log(`Client connected: ${tunnelId} -> ${BASE_URL}/${tunnelId}`)
 })
 
-// Proxy tunnel traffic
-app.use('/t/:tunnelId', (req, res) => {
+// reserved routes
+app.get('/', (req, res) => res.json({ status: 'bore server running' }))
+app.get('/health', (req, res) => res.json({ ok: true }))
+
+// catch all - treat first segment as tunnel ID
+app.use('/:tunnelId', (req, res) => {
   const { tunnelId } = req.params
   const client = clients.get(tunnelId)
 
   if (!client || client.ws.readyState !== 1) {
-    return res.status(502).json({ error: 'No tunnel connected for this ID' })
+    return res.status(502).json({ error: 'No tunnel connected', id: tunnelId })
   }
 
   const requestId = nanoid()
@@ -69,8 +88,7 @@ app.use('/t/:tunnelId', (req, res) => {
 
   req.on('data', c => chunks.push(c))
   req.on('end', () => {
-    // Strip the /t/:tunnelId prefix before forwarding
-    const forwardPath = req.url.replace(`/t/${tunnelId}`, '') || '/'
+    const forwardPath = req.url.replace(`/${tunnelId}`, '') || '/'
 
     client.ws.send(JSON.stringify({
       type: 'request',
@@ -92,7 +110,6 @@ app.use('/t/:tunnelId', (req, res) => {
       clearTimeout(timeout)
       if (res.headersSent) return
       const headers = { ...msg.headers }
-      // Remove headers that cause issues
       delete headers['transfer-encoding']
       delete headers['connection']
       res.writeHead(msg.statusCode, headers)
@@ -101,16 +118,6 @@ app.use('/t/:tunnelId', (req, res) => {
   })
 })
 
-app.get('/', (req, res) => res.json({ status: 'tunnel server running' }))
-
 server.listen(process.env.PORT || 3001, () => {
-  console.log('Server running')
+  console.log(`Bore server running on port ${process.env.PORT || 3001}`)
 })
-
-// Keep Render free tier alive (spins down after 15 min of inactivity)
-const APP_URL = process.env.APP_URL // set this in Render env vars
-if (APP_URL) {
-  setInterval(() => {
-    https.get(APP_URL).on('error', () => {})
-  }, 14 * 60 * 1000) // ping every 14 min
-}
