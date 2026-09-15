@@ -1,3 +1,2 @@
-server
-*.md
 .env
+*.log

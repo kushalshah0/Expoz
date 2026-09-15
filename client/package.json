@@ -2,12 +2,20 @@
   "name": "expoz",
   "version": "1.0.0",
   "description": "Expose localhost to the internet instantly",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kushalshah0/Expoz"
+  },
+  "homepage": "https://github.com/kushalshah0/Expoz#readme",
+  "bugs": {
+    "url": "https://github.com/kushalshah0/Expoz/issues"
+  },
   "type": "module",
   "main": "index.js",
   "bin": {
     "expoz": "./cli.js"
   },
-  "keywords": ["tunnel", "localhost", "expose", "ngrok", "cloudflare"],
+  "keywords": ["tunnel", "localhost", "expose", "ngrok", "cloudflare", "expoz"],
   "author": "Kushal Shah",
   "license": "MIT",
   "dependencies": {
