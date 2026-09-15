@@ -1,6 +1,6 @@
 {
-  "name": "expoz",
-  "version": "1.0.0",
+  "name": "@kushalshah0/expoz",
+  "version": "1.0.1",
   "description": "Expose localhost to the internet instantly",
   "repository": {
     "type": "git",
@@ -15,7 +15,14 @@
   "bin": {
     "expoz": "./cli.js"
   },
-  "keywords": ["tunnel", "localhost", "expose", "ngrok", "cloudflare", "expoz"],
+  "keywords": [
+    "tunnel",
+    "localhost",
+    "expose",
+    "ngrok",
+    "cloudflare",
+    "expoz"
+  ],
   "author": "Kushal Shah",
   "license": "MIT",
   "dependencies": {
