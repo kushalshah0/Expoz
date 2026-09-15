@@ -4,12 +4,14 @@ import http from 'http'
 export function createTunnel({
   port = 3000,
   server = process.env.EXPOZ_SERVER || 'wss://expoz.onrender.com',
+  tunnelId = null,
   onUrl = null
 } = {}) {
   const ws = new WebSocket(`${server}/register`)
 
   ws.on('open', () => {
     console.log('Connecting to expoz server...')
+    ws.send(JSON.stringify({ type: 'register', tunnelId }))
   })
 
   ws.on('ping', () => ws.pong())
@@ -72,7 +74,7 @@ export function createTunnel({
 
   ws.on('close', () => {
     console.log('Disconnected. Reconnecting in 3s...')
-    setTimeout(() => createTunnel({ port, server, onUrl }), 3000)
+    setTimeout(() => createTunnel({ port, server, tunnelId, onUrl }), 3000)
   })
 
   ws.on('error', (err) => {

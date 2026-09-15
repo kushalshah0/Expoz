@@ -29,18 +29,44 @@ server.on('upgrade', (req, socket, head) => {
 })
 
 wss.on('connection', (ws) => {
-  const tunnelId = nanoid(8)
-  clients.set(tunnelId, { ws, pending: new Map() })
+  let tunnelId = null
 
-  ws.send(JSON.stringify({
-    type: 'connected',
-    tunnelId,
-    url: `${BASE_URL}/${tunnelId}`
-  }))
+  const ping = setInterval(() => {
+    if (ws.readyState === ws.OPEN) ws.ping()
+    else clearInterval(ping)
+  }, 25000)
+
+  const fallbackTimeout = setTimeout(() => {
+    if (!tunnelId) finalizeTunnel(nanoid(8))
+  }, 5000)
+
+  function finalizeTunnel(id) {
+    clearTimeout(fallbackTimeout)
+    tunnelId = id
+    clients.set(tunnelId, { ws, pending: new Map() })
+    ws.send(JSON.stringify({
+      type: 'connected',
+      tunnelId,
+      url: `${BASE_URL}/${tunnelId}`
+    }))
+    console.log(`Client connected: ${tunnelId} -> ${BASE_URL}/${tunnelId}`)
+  }
 
   ws.on('message', (data) => {
     const msg = JSON.parse(data)
-    if (msg.type === 'response') {
+
+    if (msg.type === 'register' && !tunnelId) {
+      const requested = (msg.tunnelId || '').trim()
+      if (requested && !clients.has(requested) && /^[a-zA-Z0-9_-]{1,64}$/.test(requested)) {
+        return finalizeTunnel(requested)
+      }
+      if (requested && clients.has(requested)) {
+        return ws.send(JSON.stringify({ type: 'error', message: 'Tunnel ID already in use' }))
+      }
+      return finalizeTunnel(nanoid(8))
+    }
+
+    if (msg.type === 'response' && tunnelId) {
       const client = clients.get(tunnelId)
       const resolve = client?.pending.get(msg.requestId)
       if (resolve) {
@@ -51,20 +77,17 @@ wss.on('connection', (ws) => {
   })
 
   ws.on('close', () => {
-    clients.delete(tunnelId)
-    console.log(`Client disconnected: ${tunnelId}`)
+    clearInterval(ping)
+    clearTimeout(fallbackTimeout)
+    if (tunnelId) clients.delete(tunnelId)
+    if (tunnelId) console.log(`Client disconnected: ${tunnelId}`)
   })
 
   ws.on('error', () => {
-    clients.delete(tunnelId)
+    clearInterval(ping)
+    clearTimeout(fallbackTimeout)
+    if (tunnelId) clients.delete(tunnelId)
   })
-
-  const ping = setInterval(() => {
-    if (ws.readyState === ws.OPEN) ws.ping()
-    else clearInterval(ping)
-  }, 25000)
-
-  console.log(`Client connected: ${tunnelId} -> ${BASE_URL}/${tunnelId}`)
 })
 
 // reserved routes
