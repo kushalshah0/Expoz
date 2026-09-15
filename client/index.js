@@ -19,6 +19,10 @@ export function createTunnel({
   ws.on('message', (data) => {
     const msg = JSON.parse(data)
 
+    if (msg.type === 'warn') {
+      console.log(`! ${msg.message}`)
+    }
+
     if (msg.type === 'connected') {
       console.log(`\nExposed at: ${msg.url}\n`)
       if (onUrl) onUrl(msg.url)

@@ -8,7 +8,7 @@ const server = process.env.EXPOZ_SERVER || 'wss://expoz.onrender.com'
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 
-rl.question('? Enter tunnel ID (leave blank for random): ', (answer) => {
+rl.question('Enter tunnel ID (leave blank for random): ', (answer) => {
   rl.close()
   const tunnelId = answer.trim() || null
   console.log(`Starting expoz on localhost:${port}`)

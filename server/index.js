@@ -36,57 +36,57 @@ wss.on('connection', (ws) => {
     else clearInterval(ping)
   }, 25000)
 
-  const fallbackTimeout = setTimeout(() => {
-    if (!tunnelId) finalizeTunnel(nanoid(8))
-  }, 5000)
-
-  function finalizeTunnel(id) {
-    clearTimeout(fallbackTimeout)
-    tunnelId = id
-    clients.set(tunnelId, { ws, pending: new Map() })
-    ws.send(JSON.stringify({
-      type: 'connected',
-      tunnelId,
-      url: `${BASE_URL}/${tunnelId}`
-    }))
-    console.log(`Client connected: ${tunnelId} -> ${BASE_URL}/${tunnelId}`)
-  }
-
-  ws.on('message', (data) => {
+  ws.once('message', (data) => {
     const msg = JSON.parse(data)
 
-    if (msg.type === 'register' && !tunnelId) {
-      const requested = (msg.tunnelId || '').trim()
-      if (requested && !clients.has(requested) && /^[a-zA-Z0-9_-]{1,64}$/.test(requested)) {
-        return finalizeTunnel(requested)
+    if (msg.type === 'register') {
+      if (msg.tunnelId && !clients.has(msg.tunnelId)) {
+        tunnelId = msg.tunnelId
+      } else {
+        if (msg.tunnelId) {
+          ws.send(JSON.stringify({
+            type: 'warn',
+            message: `ID "${msg.tunnelId}" is taken, assigned a random one`
+          }))
+        }
+        tunnelId = nanoid(8)
       }
-      if (requested && clients.has(requested)) {
-        return ws.send(JSON.stringify({ type: 'error', message: 'Tunnel ID already in use' }))
-      }
-      return finalizeTunnel(nanoid(8))
-    }
 
-    if (msg.type === 'response' && tunnelId) {
-      const client = clients.get(tunnelId)
-      const resolve = client?.pending.get(msg.requestId)
-      if (resolve) {
-        resolve(msg)
-        client.pending.delete(msg.requestId)
-      }
+      clients.set(tunnelId, { ws, pending: new Map() })
+
+      ws.send(JSON.stringify({
+        type: 'connected',
+        tunnelId,
+        url: `${BASE_URL}/${tunnelId}`
+      }))
+
+      console.log(`Client connected: ${tunnelId} -> ${BASE_URL}/${tunnelId}`)
+
+      ws.on('message', (data) => {
+        const msg = JSON.parse(data)
+        if (msg.type === 'response') {
+          const client = clients.get(tunnelId)
+          const resolve = client?.pending.get(msg.requestId)
+          if (resolve) {
+            resolve(msg)
+            client.pending.delete(msg.requestId)
+          }
+        }
+      })
     }
   })
 
   ws.on('close', () => {
+    if (tunnelId) {
+      clients.delete(tunnelId)
+      console.log(`Client disconnected: ${tunnelId}`)
+    }
     clearInterval(ping)
-    clearTimeout(fallbackTimeout)
-    if (tunnelId) clients.delete(tunnelId)
-    if (tunnelId) console.log(`Client disconnected: ${tunnelId}`)
   })
 
   ws.on('error', () => {
-    clearInterval(ping)
-    clearTimeout(fallbackTimeout)
     if (tunnelId) clients.delete(tunnelId)
+    clearInterval(ping)
   })
 })
 
