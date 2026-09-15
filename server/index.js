@@ -8,7 +8,7 @@ const app = express()
 const server = createServer(app)
 const wss = new WebSocketServer({ noServer: true })
 
-const BASE_URL = process.env.BASE_URL || 'https://bore-umh2.onrender.com'
+const BASE_URL = process.env.BASE_URL || 'https://expoz.onrender.com'
 const APP_URL = process.env.APP_URL
 
 const clients = new Map()
@@ -71,7 +71,7 @@ wss.on('connection', (ws) => {
 })
 
 // reserved routes
-app.get('/', (req, res) => res.json({ status: 'bore server running' }))
+app.get('/', (req, res) => res.json({ status: 'expoz server running' }))
 app.get('/health', (req, res) => res.json({ ok: true }))
 
 // catch all - treat first segment as tunnel ID

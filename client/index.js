@@ -3,7 +3,7 @@ import http from 'http'
 
 export function createTunnel({
   port = 3000,
-  server = process.env.BORE_SERVER || 'wss://bore-umh2.onrender.com',
+  server = process.env.EXPOZ_SERVER || 'wss://expoz.onrender.com',
   onUrl = null
 } = {}) {
   const ws = new WebSocket(`${server}/register`)
