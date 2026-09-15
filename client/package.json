@@ -7,6 +7,9 @@
   "bin": {
     "expoz": "./cli.js"
   },
+  "keywords": ["tunnel", "localhost", "expose", "ngrok", "cloudflare"],
+  "author": "Kushal Shah",
+  "license": "MIT",
   "dependencies": {
     "ws": "^8.0.0"
   }
