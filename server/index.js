@@ -10,6 +10,8 @@ const wss = new WebSocketServer({ noServer: true })
 
 const clients = new Map() // tunnelId -> ws
 
+const BASE_URL = process.env.BASE_URL || 'https://bore-umh2.onrender.com'
+
 // Handle WebSocket upgrade only on /register path
 server.on('upgrade', (req, socket, head) => {
   if (req.url === '/register') {
@@ -28,7 +30,7 @@ wss.on('connection', (ws) => {
   ws.send(JSON.stringify({
     type: 'connected',
     tunnelId,
-    url: `https://${process.env.APP_DOMAIN || 'your-app.onrender.com'}/t/${tunnelId}`
+    url: `${BASE_URL}/t/${tunnelId}`
   }))
 
   ws.on('message', (data) => {
