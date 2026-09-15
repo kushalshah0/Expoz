@@ -116,5 +116,5 @@ app.use('/:tunnelId', (req, res) => {
 })
 
 server.listen(process.env.PORT || 3001, () => {
-  console.log(`Bore server running on port ${process.env.PORT || 3001}`)
+  console.log(`Expoz server running on port ${process.env.PORT || 3001}`)
 })
