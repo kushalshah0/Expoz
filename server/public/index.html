@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Expoz gives your local development server a public HTTPS URL in seconds.">
+  <title>Expoz | Your localhost, everywhere</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #17211d;
+      --muted: #66736d;
+      --paper: #f4f2eb;
+      --panel: #fffdf7;
+      --line: #d8ddd3;
+      --lime: #d8f36b;
+      --coral: #ef8068;
+      --teal: #176b68;
+      --shadow: 0 22px 60px rgba(23, 33, 29, .12);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Space Grotesk", sans-serif;
+      line-height: 1.5;
+    }
+    a { color: inherit; }
+    .shell { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
+    .mono { font-family: "DM Mono", monospace; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      min-height: 76px; border-bottom: 1px solid var(--line);
+    }
+    .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 700; letter-spacing: -.04em; font-size: 1.2rem; }
+    .brand-mark { display: grid; place-items: center; width: 30px; height: 30px; background: var(--ink); color: var(--lime); border-radius: 8px; font-size: .85rem; }
+    nav { display: flex; gap: 26px; align-items: center; color: var(--muted); font-size: .92rem; }
+    nav a { text-decoration: none; }
+    nav a:hover { color: var(--ink); }
+    .status-link { display: inline-flex; align-items: center; gap: 8px; color: var(--teal); font-size: .82rem; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #53b768; box-shadow: 0 0 0 4px rgba(83, 183, 104, .15); }
+
+    .hero { position: relative; padding: 94px 0 84px; overflow: hidden; }
+    .hero::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+      background-image: linear-gradient(rgba(23, 33, 29, .055) 1px, transparent 1px), linear-gradient(90deg, rgba(23, 33, 29, .055) 1px, transparent 1px);
+      background-size: 42px 42px; mask-image: linear-gradient(to bottom, black, transparent 82%);
+    }
+    .hero-grid { position: relative; display: grid; grid-template-columns: 1.08fr .92fr; gap: 70px; align-items: center; }
+    .eyebrow { display: flex; align-items: center; gap: 9px; color: var(--teal); font-size: .75rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 28px; height: 2px; background: var(--coral); }
+    h1 { max-width: 700px; margin: 20px 0 23px; font-size: clamp(3.5rem, 8vw, 7.2rem); line-height: .91; letter-spacing: -.085em; font-weight: 600; }
+    .hero-copy { max-width: 535px; color: var(--muted); font-size: 1.13rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+    .button { display: inline-flex; align-items: center; gap: 11px; padding: 13px 18px; border: 1px solid var(--ink); border-radius: 7px; text-decoration: none; font-weight: 600; transition: transform .2s, box-shadow .2s; }
+    .button:hover { transform: translateY(-2px); box-shadow: 5px 5px 0 var(--ink); }
+    .button-primary { background: var(--ink); color: var(--lime); }
+    .button-secondary { background: transparent; }
+    .terminal { background: var(--ink); color: #dfe9dd; border-radius: 13px; overflow: hidden; box-shadow: var(--shadow); transform: rotate(1.5deg); }
+    .terminal-bar { display: flex; gap: 7px; padding: 14px 17px; border-bottom: 1px solid rgba(255,255,255,.1); }
+    .terminal-bar i { display: block; width: 9px; height: 9px; border-radius: 50%; background: #ef8068; }
+    .terminal-bar i:nth-child(2) { background: #d8f36b; }
+    .terminal-bar i:nth-child(3) { background: #6dbbb4; }
+    pre { margin: 0; padding: 27px 25px 31px; overflow: auto; font: .86rem/1.9 "DM Mono", monospace; }
+    .prompt { color: var(--lime); }
+    .command { color: #fffdf7; }
+    .comment { color: #81908a; }
+    .url { display: inline-block; margin-top: 15px; padding: 8px 11px; color: var(--ink); background: var(--lime); border-radius: 4px; }
+
+    .signal { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 20px 0; }
+    .signal-row { display: flex; justify-content: space-between; gap: 20px; color: var(--muted); font-size: .84rem; }
+    .signal-row strong { color: var(--ink); font-weight: 600; }
+    .section { padding: 108px 0; }
+    .section-heading { display: grid; grid-template-columns: .75fr 1.25fr; gap: 60px; margin-bottom: 58px; }
+    h2 { margin: 0; font-size: clamp(2.3rem, 5vw, 4.6rem); line-height: .98; letter-spacing: -.07em; font-weight: 600; }
+    .section-intro { max-width: 500px; margin: 8px 0 0; color: var(--muted); font-size: 1.05rem; }
+    .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+    .feature { min-height: 245px; padding: 30px; background: var(--panel); }
+    .feature-number { color: var(--coral); font: .8rem "DM Mono", monospace; }
+    .feature h3 { margin: 48px 0 9px; font-size: 1.25rem; letter-spacing: -.03em; }
+    .feature p { margin: 0; color: var(--muted); font-size: .93rem; }
+    .how { background: var(--teal); color: #f3f5e8; }
+    .how .section-intro { color: #b9d5cc; }
+    .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+    .step { border-top: 1px solid rgba(255,255,255,.35); padding-top: 18px; }
+    .step-number { color: var(--lime); font: .85rem "DM Mono", monospace; }
+    .step h3 { margin: 55px 0 10px; font-size: 1.2rem; }
+    .step p { margin: 0; color: #b9d5cc; }
+    .install { padding: 78px 0 106px; }
+    .install-band { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 38px 42px; background: var(--lime); border-radius: 10px; }
+    .install-band h2 { font-size: clamp(2rem, 4vw, 3.5rem); }
+    .install-command { padding: 15px 18px; background: var(--ink); color: var(--lime); border-radius: 6px; white-space: nowrap; font: .9rem "DM Mono", monospace; }
+    footer { border-top: 1px solid var(--line); padding: 25px 0 34px; color: var(--muted); font-size: .82rem; }
+    .footer-row { display: flex; justify-content: space-between; gap: 20px; }
+    .footer-links { display: flex; gap: 18px; }
+    .footer-links a { text-decoration: none; }
+
+    @media (max-width: 800px) {
+      .shell { width: min(100% - 28px, 620px); }
+      nav a:not(.status-link) { display: none; }
+      .hero { padding: 65px 0 60px; }
+      .hero-grid, .section-heading { grid-template-columns: 1fr; gap: 38px; }
+      h1 { font-size: clamp(3.6rem, 17vw, 6rem); }
+      .terminal { transform: none; }
+      .signal-row { flex-wrap: wrap; }
+      .section { padding: 75px 0; }
+      .feature-grid, .how-grid { grid-template-columns: 1fr; }
+      .feature { min-height: auto; }
+      .feature h3, .step h3 { margin-top: 28px; }
+      .install-band { align-items: flex-start; flex-direction: column; padding: 28px; }
+      .install-command { white-space: normal; word-break: break-word; }
+      .footer-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell topbar">
+    <a class="brand" href="/"><span class="brand-mark">↗</span> expoz</a>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a class="status-link" href="/health"><span class="status-dot"></span> service status</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="shell hero">
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow">local development infrastructure</div>
+          <h1>Your localhost,<br><em>everywhere.</em></h1>
+          <p class="hero-copy">A fast, open-source HTTPS tunnel for demos, webhooks, and the moment your local app needs to meet the real internet.</p>
+          <div class="actions">
+            <a class="button button-primary" href="#install">Start tunneling <span aria-hidden="true">↗</span></a>
+            <a class="button button-secondary" href="https://github.com/kushalshah0/Expoz">View on GitHub <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <div class="terminal" aria-label="Expoz command line example">
+          <div class="terminal-bar"><i></i><i></i><i></i></div>
+          <pre><span class="comment"># expose your local app</span>
+<span class="prompt">$</span> <span class="command">expoz 3000</span>
+
+<span class="comment"># your public URL is ready</span>
+<span class="url">https://expoz.onrender.com/demo</span>
+
+<span class="comment">connected / streaming / secure</span></pre>
+        </div>
+      </div>
+    </section>
+
+    <div class="signal">
+      <div class="shell signal-row">
+        <span><strong class="mono">01</strong> no port forwarding</span>
+        <span><strong class="mono">02</strong> no config file</span>
+        <span><strong class="mono">03</strong> plain Node.js</span>
+        <span><strong class="mono">04</strong> self-hostable</span>
+      </div>
+    </div>
+
+    <section id="features" class="shell section">
+      <div class="section-heading">
+        <h2>Built for the messy middle.</h2>
+        <p class="section-intro">The space between “it works on my machine” and “here, take a look.” Expoz keeps that handoff simple, inspectable, and yours.</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature"><span class="feature-number">01 / instant</span><h3>One command to public</h3><p>Get a public HTTPS URL for any local HTTP server in seconds. No dashboard, no setup ceremony.</p></article>
+        <article class="feature"><span class="feature-number">02 / flexible</span><h3>Bring your own route</h3><p>Choose a memorable tunnel ID for demos or let Expoz generate one when speed matters more.</p></article>
+        <article class="feature"><span class="feature-number">03 / resilient</span><h3>Streams, not snapshots</h3><p>Requests and responses travel in chunks, so larger uploads and downloads stay practical.</p></article>
+      </div>
+    </section>
+
+    <section id="how" class="how section">
+      <div class="shell">
+        <div class="section-heading">
+          <h2>The short route<br>to outside.</h2>
+          <p class="section-intro">A small relay server connects the public internet to a client running beside your app. Your code stays local; the URL does not.</p>
+        </div>
+        <div class="how-grid">
+          <article class="step"><span class="step-number">01</span><h3>Connect</h3><p>The CLI opens a persistent WebSocket to the Expoz relay and claims your tunnel ID.</p></article>
+          <article class="step"><span class="step-number">02</span><h3>Forward</h3><p>A visitor request arrives at your public URL and is streamed across the tunnel.</p></article>
+          <article class="step"><span class="step-number">03</span><h3>Respond</h3><p>Your local server answers normally. Expoz streams the response back to the visitor.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" class="shell install">
+      <div class="install-band">
+        <h2>Ready when your<br>localhost is.</h2>
+        <div class="install-command">npm install -g @kushalshah0/expoz<br><span style="color:#fffdf7">expoz 3000</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-row">
+      <span>expoz / open-source local tunnels</span>
+      <div class="footer-links"><a href="/health">health</a><a href="/status">status</a><a href="https://github.com/kushalshah0/Expoz">GitHub</a></div>
+    </div>
+  </footer>
+</body>
+</html>

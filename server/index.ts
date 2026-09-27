@@ -2,6 +2,7 @@ import express from 'express'
 import { WebSocketServer } from 'ws'
 import type { WebSocket, RawData } from 'ws'
 import { createServer } from 'http'
+import path from 'node:path'
 import { nanoid } from 'nanoid'
 import https from 'https'
 import type { Request, Response } from 'express'
@@ -170,7 +171,7 @@ wss.on('connection', (ws: WebSocket) => {
 })
 
 // reserved routes
-app.get('/', (req, res) => res.json({ status: 'expoz server running' }))
+app.get('/', (req, res) => res.sendFile(path.join(process.cwd(), 'public', 'index.html')))
 app.get('/health', (req, res) => res.json({ ok: true }))
 app.get('/status', (req, res) => res.json(metrics.snapshot()))
 

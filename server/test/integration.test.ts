@@ -76,6 +76,12 @@ test('proxies GET and POST requests through a real tunnel', async (t) => {
 
   await waitForOutput(serverProcess, 'Expoz server running')
 
+  const homepageResponse = await fetch('http://127.0.0.1:3001/')
+  assert.equal(homepageResponse.status, 200)
+  const homepage = await homepageResponse.text()
+  assert.match(homepage, /Your localhost,?<br>/)
+  assert.match(homepage, /Start tunneling/)
+
   const clientModulePath = pathToFileURL(new URL('../../client/index.ts', import.meta.url).pathname).href
   const { createTunnel } = await import(clientModulePath) as {
     createTunnel: (options: CreateTunnelOptions) => TunnelHandle
