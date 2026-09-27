@@ -18,7 +18,8 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "tsx --test test/**/*.test.ts"
+    "test": "tsx --test test/**/*.test.ts",
+    "pack:check": "npm pack --dry-run"
   },
   "keywords": [
     "tunnel",

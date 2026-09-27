@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    name: Node.js ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: |
+            client/package-lock.json
+            server/package-lock.json
+
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Build client
+        working-directory: client
+        run: npm run build
+
+      - name: Test client
+        working-directory: client
+        run: npm test
+
+      - name: Build server
+        working-directory: server
+        run: npm run build
+
+      - name: Test server and tunnel integration
+        working-directory: server
+        run: npm test
+
+      - name: Validate npm package contents
+        working-directory: client
+        run: npm run pack:check
+
+      - name: Ensure TypeScript-only source layout
+        shell: bash
+        run: |
+          if find client server -maxdepth 1 -type f -name '*.js' | grep -q .; then
+            echo 'Unexpected root-level JavaScript source file found.'
+            exit 1
+          fi

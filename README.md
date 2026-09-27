@@ -155,6 +155,8 @@ cd ../server && npm install && npm run build && npm test
 
 The client package publishes compiled files from `client/dist`. The server starts from its compiled `server/dist` output.
 
+Pull requests and pushes run the same client/server builds, tests, tunnel integration test, and npm package validation through GitHub Actions.
+
 ## License
 
 [MIT](LICENSE)
