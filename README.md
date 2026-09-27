@@ -38,11 +38,11 @@ Built on `ws`, `express`, and `nanoid`. No ngrok-style binary — plain Node.js.
 ```
 .
 ├── client/               # The npm package (@kushalshah0/expoz)
-│   ├── index.js          # createTunnel() — programmatic API + request proxying
-│   ├── cli.js            # expoz CLI — interactive tunnel ID prompt
+│   ├── index.ts          # createTunnel() — programmatic API + request proxying
+│   ├── cli.ts            # expoz CLI — interactive tunnel ID prompt
 │   └── package.json
 ├── server/               # The tunnel server (deployed on Render)
-│   └── index.js          # WebSocket registry + HTTP proxy
+│   └── index.ts          # WebSocket registry + HTTP proxy
 └── .env                  # Local env vars (gitignored)
 ```
 
@@ -59,6 +59,8 @@ Start any local server (e.g. on port 3000), then:
 ```bash
 expoz 3000
 ```
+
+The generated URL is printed as a clickable terminal link in terminals that support Ctrl+click links.
 
 You'll be prompted for a tunnel ID:
 
@@ -118,6 +120,8 @@ npm install
 BASE_URL=https://your-domain.com npm start   # listens on :3001
 ```
 
+Optional server limits can be configured with `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS`, and `MAX_BODY_BYTES`.
+
 ## How the protocol works
 
 Messages are JSON over a single WebSocket per tunnel:
@@ -126,11 +130,15 @@ Messages are JSON over a single WebSocket per tunnel:
 | --------- | -------------------------- | -------------------------------- |
 | Client →  | `{ type: 'register', tunnelId }` | Claim a tunnel ID            |
 | Server →  | `{ type: 'connected', tunnelId, url }` | Confirm and hand out URL |
-| Server →  | `{ type: 'request', requestId, method, path, headers, body }` | Forward HTTP request |
-| Client →  | `{ type: 'response', requestId, statusCode, headers, body }` | Stream response back |
+| Server →  | `{ type: 'request_start', requestId, method, path, headers }` | Start HTTP request |
+| Server →  | `{ type: 'request_chunk', requestId, body }` | Stream request data |
+| Server →  | `{ type: 'request_end', requestId }` | Finish HTTP request |
+| Client →  | `{ type: 'response_start', requestId, statusCode, headers }` | Start HTTP response |
+| Client →  | `{ type: 'response_chunk', requestId, body }` | Stream response data |
+| Client →  | `{ type: 'response_end', requestId }` | Finish HTTP response |
 | Server →  | `{ type: 'warn', message }` | e.g. custom ID already taken     |
 
-HTTP request bodies are base64-encoded inside the messages; the server keeps a map of pending requests keyed by `requestId`.
+HTTP data chunks are base64-encoded inside the messages; the server keeps a map of pending requests keyed by `requestId`.
 
 ## Development
 
@@ -139,11 +147,13 @@ git clone https://github.com/kushalshah0/Expoz.git
 cd Expoz
 
 # client
-cd client && npm install
+cd client && npm install && npm run build && npm test
 
 # server
-cd ../server && npm install && npm start
+cd ../server && npm install && npm run build && npm test
 ```
+
+The client package publishes compiled files from `client/dist`. The server starts from its compiled `server/dist` output.
 
 ## License
 
