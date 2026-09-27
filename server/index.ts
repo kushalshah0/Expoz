@@ -7,6 +7,7 @@ import https from 'https'
 import type { Request, Response } from 'express'
 import type { RegisterMessage, ResponseMessage } from './protocol.js'
 import { Metrics } from './metrics.js'
+import { log } from './logger.js'
 import {
   isValidResponseChunkMessage,
   isValidResponseEndMessage,
@@ -92,7 +93,7 @@ wss.on('connection', (ws: WebSocket) => {
         url: `${BASE_URL}/${tunnelId}`
       }))
 
-      console.log(`Client connected: ${tunnelId} -> ${BASE_URL}/${tunnelId}`)
+      log('info', 'tunnel_connected', { tunnelId, url: `${BASE_URL}/${tunnelId}` })
 
       ws.on('message', (data: RawData) => {
         const msg = parseJsonMessage(rawDataToBuffer(data))
@@ -153,12 +154,13 @@ wss.on('connection', (ws: WebSocket) => {
         clients.delete(tunnelId)
         metrics.tunnelDisconnected()
       }
-      console.log(`Client disconnected: ${tunnelId}`)
+      log('info', 'tunnel_disconnected', { tunnelId })
     }
     clearInterval(ping)
   })
 
-  ws.on('error', () => {
+  ws.on('error', (error: Error) => {
+    log('error', 'websocket_error', { message: error.message, tunnelId })
     if (tunnelId && clients.get(tunnelId)?.ws === ws) {
       clients.delete(tunnelId)
       metrics.tunnelDisconnected()
@@ -228,11 +230,14 @@ app.use('/:tunnelId', (req: Request, res: Response) => {
 })
 
 server.listen(process.env.PORT || 3001, () => {
-  console.log(`Expoz server running on port ${process.env.PORT || 3001}`)
+  log('info', 'server_started', {
+    message: `Expoz server running on port ${process.env.PORT || 3001}`,
+    port: Number(process.env.PORT) || 3001
+  })
 })
 
 function shutdown(signal: string): void {
-  console.log(`Received ${signal}, shutting down...`)
+  log('info', 'server_shutdown', { signal })
   clearInterval(keepAlive)
   clearInterval(rateLimitCleanup)
 

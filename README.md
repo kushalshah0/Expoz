@@ -122,6 +122,8 @@ BASE_URL=https://your-domain.com npm start   # listens on :3001
 
 Optional server limits can be configured with `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS`, and `MAX_BODY_BYTES`. The server exposes `/health` and `/status` endpoints; `/status` reports active tunnels, request/response totals, errors, and transferred bytes.
 
+Server lifecycle and WebSocket errors are emitted as JSON log events with `timestamp`, `level`, and `event` fields.
+
 ## How the protocol works
 
 Messages are JSON over a single WebSocket per tunnel:
