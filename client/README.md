@@ -34,3 +34,13 @@ Set your own server:
 ```bash
 EXPOZ_SERVER=wss://your-server.com expoz 3000
 ```
+
+## Development
+
+```bash
+npm install
+npm run build
+npm test
+```
+
+The package is written in TypeScript and publishes the compiled `dist` directory.

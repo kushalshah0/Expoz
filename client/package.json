@@ -11,9 +11,14 @@
     "url": "https://github.com/kushalshah0/Expoz/issues"
   },
   "type": "module",
-  "main": "index.js",
+  "main": "dist/index.js",
   "bin": {
-    "expoz": "./cli.js"
+    "expoz": "./dist/cli.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "tsx --test test/**/*.test.ts"
   },
   "keywords": [
     "tunnel",
@@ -27,5 +32,11 @@
   "license": "MIT",
   "dependencies": {
     "ws": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
   }
 }
