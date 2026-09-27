@@ -15,6 +15,7 @@ interface TunnelOptions {
   server?: string
   tunnelId?: string | null
   onUrl?: ((url: string) => void) | null
+  onError?: ((error: Error) => void) | null
   reconnectDelay?: number
   maxReconnectDelay?: number
 }
@@ -31,6 +32,7 @@ export function createTunnel({
   server = process.env.EXPOZ_SERVER || 'wss://expoz.onrender.com',
   tunnelId = null,
   onUrl = null,
+  onError = null,
   reconnectDelay = DEFAULT_RECONNECT_MS,
   maxReconnectDelay = MAX_RECONNECT_MS
 }: TunnelOptions = {}): TunnelHandle {
@@ -43,7 +45,16 @@ export function createTunnel({
   const connect = () => {
     if (isStopped) return
 
-    const socket = new WebSocket(`${server}/register`)
+    let socket: WebSocket
+    try {
+      socket = new WebSocket(`${server}/register`)
+    } catch (cause) {
+      const error = cause instanceof Error ? cause : new Error(String(cause))
+      console.error(`Connection error: ${error.message}`)
+      if (onError) onError(error)
+      isStopped = true
+      return
+    }
     ws = socket
 
     socket.on('open', () => {
@@ -133,8 +144,16 @@ export function createTunnel({
       }
     })
 
-    socket.on('close', () => {
+    socket.on('close', (code: number) => {
       if (isStopped) return
+
+      if (code === 1008) {
+        const error = new Error('Server rejected the tunnel registration')
+        console.error(`Connection rejected: ${error.message}`)
+        if (onError) onError(error)
+        isStopped = true
+        return
+      }
 
       const nextDelay = Math.min(reconnectDelay * (2 ** reconnectAttempt), maxReconnectDelay)
       reconnectAttempt += 1
@@ -146,8 +165,15 @@ export function createTunnel({
       }, nextDelay)
     })
 
-    socket.on('error', (err: Error) => {
-      console.error('WebSocket error:', err.message)
+    socket.on('error', (err: Error & { code?: string }) => {
+      const message = err.code === 'ECONNREFUSED'
+        ? `Server unreachable at ${server}`
+        : err.code === 'ENOTFOUND'
+          ? `Server hostname could not be resolved: ${server}`
+          : err.message
+      const error = new Error(message)
+      console.error(`Connection error: ${message}`)
+      if (onError) onError(error)
     })
   }
 

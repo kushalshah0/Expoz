@@ -14,6 +14,9 @@ npm install -g @kushalshah0/expoz
 # expose port 3000
 expoz 3000
 
+# tune reconnect timing
+expoz 3000 --reconnect-delay 5000 --max-reconnect-delay 30000
+
 # you'll be prompted to enter a tunnel ID
 # Enter tunnel ID (leave blank for random): myapp
 # Exposed at: https://expoz.onrender.com/myapp

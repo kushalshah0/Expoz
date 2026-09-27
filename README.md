@@ -62,6 +62,8 @@ expoz 3000
 
 The generated URL is printed as a clickable terminal link in terminals that support Ctrl+click links.
 
+Reconnect behavior can be tuned with `--reconnect-delay <ms>` and `--max-reconnect-delay <ms>`.
+
 You'll be prompted for a tunnel ID:
 
 ```

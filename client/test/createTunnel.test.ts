@@ -81,6 +81,19 @@ test('cli parser rejects ports outside the valid range', () => {
   assert.equal(parseCliArgs(['--port', '70000']).error, 'Port must be between 1 and 65535')
 })
 
+test('cli parser accepts reconnect settings', () => {
+  const parsed = parseCliArgs(['--reconnect-delay', '5000', '--max-reconnect-delay', '20000'])
+
+  assert.equal(parsed.reconnectDelay, 5000)
+  assert.equal(parsed.maxReconnectDelay, 20000)
+})
+
+test('cli parser rejects invalid server, tunnel ID, and reconnect settings', () => {
+  assert.equal(parseCliArgs(['--server', 'http://example.test']).error, 'Server URL must use ws:// or wss://')
+  assert.equal(parseCliArgs(['--id', 'bad id']).error, 'Tunnel ID must use 3-64 letters, numbers, dashes, or underscores')
+  assert.equal(parseCliArgs(['--reconnect-delay', '5000', '--max-reconnect-delay', '1000']).error, 'Maximum reconnect delay must be at least the initial delay')
+})
+
 test('request protocol validation rejects malformed payloads', () => {
   const request = {
     type: 'request' as const,
