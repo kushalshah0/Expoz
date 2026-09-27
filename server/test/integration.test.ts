@@ -126,4 +126,15 @@ test('proxies GET and POST requests through a real tunnel', async (t) => {
   const largeResult = await largeResponse.json() as { body: string }
   assert.equal(largeResult.body.length, largeBody.length)
   assert.equal(largeResult.body, largeBody)
+
+  const statusResponse = await fetch('http://127.0.0.1:3001/status')
+  assert.equal(statusResponse.status, 200)
+  const status = await statusResponse.json() as {
+    activeTunnels: number
+    requestsTotal: number
+    responseBytes: number
+  }
+  assert.equal(status.activeTunnels, 1)
+  assert.ok(status.requestsTotal >= 3)
+  assert.ok(status.responseBytes > 0)
 })

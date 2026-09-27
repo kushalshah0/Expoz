@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid'
 import https from 'https'
 import type { Request, Response } from 'express'
 import type { RegisterMessage, ResponseMessage } from './protocol.js'
+import { Metrics } from './metrics.js'
 import {
   isValidResponseChunkMessage,
   isValidResponseEndMessage,
@@ -39,6 +40,7 @@ const keepAlive = setInterval(() => {
 keepAlive.unref()
 
 const clients = new Map<string, TunnelClient>()
+const metrics = new Metrics()
 const requestRateLimiter = new SlidingWindowRateLimiter({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 60_000,
   maxRequests: Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 60
@@ -82,6 +84,7 @@ wss.on('connection', (ws: WebSocket) => {
       }
 
       clients.set(tunnelId, { ws, pending: new Map() })
+        metrics.tunnelConnected()
 
       ws.send(JSON.stringify({
         type: 'connected',
@@ -104,6 +107,8 @@ wss.on('connection', (ws: WebSocket) => {
               delete headers['connection']
               pending.response.writeHead(msg.statusCode, headers)
               pending.response.end(Buffer.from(msg.body, 'base64'))
+              metrics.responseBytesSent(Buffer.byteLength(msg.body, 'base64'))
+              metrics.responseCompleted(msg.statusCode)
             }
             client?.pending.delete(msg.requestId)
           }
@@ -120,6 +125,7 @@ wss.on('connection', (ws: WebSocket) => {
           const pending = clients.get(tunnelId)?.pending.get(msg.requestId)
           if (pending?.responseStarted && !pending.response.writableEnded) {
             pending.response.write(Buffer.from(msg.body, 'base64'))
+            metrics.responseBytesSent(Buffer.byteLength(msg.body, 'base64'))
           }
         } else if (tunnelId && isValidResponseEndMessage(msg)) {
           const client = clients.get(tunnelId)
@@ -127,6 +133,7 @@ wss.on('connection', (ws: WebSocket) => {
           if (pending) {
             clearTimeout(pending.timeout)
             if (!pending.response.writableEnded) pending.response.end()
+            metrics.responseCompleted(pending.response.statusCode || 200)
             client?.pending.delete(msg.requestId)
           }
         } else {
@@ -144,6 +151,7 @@ wss.on('connection', (ws: WebSocket) => {
       if (client?.ws === ws) {
         for (const pending of client.pending.values()) clearTimeout(pending.timeout)
         clients.delete(tunnelId)
+        metrics.tunnelDisconnected()
       }
       console.log(`Client disconnected: ${tunnelId}`)
     }
@@ -151,7 +159,10 @@ wss.on('connection', (ws: WebSocket) => {
   })
 
   ws.on('error', () => {
-    if (tunnelId && clients.get(tunnelId)?.ws === ws) clients.delete(tunnelId)
+    if (tunnelId && clients.get(tunnelId)?.ws === ws) {
+      clients.delete(tunnelId)
+      metrics.tunnelDisconnected()
+    }
     clearInterval(ping)
   })
 })
@@ -159,6 +170,7 @@ wss.on('connection', (ws: WebSocket) => {
 // reserved routes
 app.get('/', (req, res) => res.json({ status: 'expoz server running' }))
 app.get('/health', (req, res) => res.json({ ok: true }))
+app.get('/status', (req, res) => res.json(metrics.snapshot()))
 
 // catch all - treat first segment as tunnel ID
 app.use('/:tunnelId', (req: Request, res: Response) => {
@@ -166,13 +178,16 @@ app.use('/:tunnelId', (req: Request, res: Response) => {
   const client = clients.get(tunnelId)
 
   if (!requestRateLimiter.allow(req.ip || req.socket.remoteAddress || 'unknown')) {
+    metrics.error()
     return res.status(429).json({ error: 'Too many requests' })
   }
 
   if (!client || client.ws.readyState !== 1) {
+    metrics.error()
     return res.status(502).json({ error: 'No tunnel connected', id: tunnelId })
   }
 
+  metrics.requestStarted()
   let bodyLength = 0
   const maxBodyBytes = Number(process.env.MAX_BODY_BYTES) || 10 * 1024 * 1024
   const requestId = nanoid()
@@ -192,9 +207,11 @@ app.use('/:tunnelId', (req: Request, res: Response) => {
 
   req.on('data', (chunk: Buffer) => {
     bodyLength += chunk.length
+    metrics.requestBytesReceived(chunk.length)
     if (bodyLength > maxBodyBytes) {
       req.destroy()
       if (!res.headersSent) res.status(413).json({ error: 'Request body too large' })
+      metrics.error()
       return
     }
     req.pause()
