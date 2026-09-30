@@ -30,7 +30,7 @@ function createTunnelServer(): Promise<{ httpServer: http.Server, port: number }
           ws.send(JSON.stringify({
             type: 'connected',
             tunnelId: msg.tunnelId || 'demo',
-            url: `https://example.com/${msg.tunnelId || 'demo'}`
+            url: `https://example.com/t/${msg.tunnelId || 'demo'}`
           }))
         }
       })

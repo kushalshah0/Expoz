@@ -19,7 +19,7 @@ expoz 3000 --reconnect-delay 5000 --max-reconnect-delay 30000
 
 # you'll be prompted to enter a tunnel ID
 # Enter tunnel ID (leave blank for random): myapp
-# Exposed at: https://expoz.onrender.com/myapp
+# Exposed at: https://expoz.onrender.com/t/myapp
 ```
 
 ## Programmatic
