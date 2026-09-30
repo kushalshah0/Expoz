@@ -41,6 +41,7 @@ export function createTunnel({
   let reconnectAttempt = 0
   let isStopped = false
   const activeRequests = new Map<string, http.ClientRequest>()
+  const log = (message: string) => console.log(`[expoz] [${formatTimestamp()}] ${message}`)
 
   const connect = () => {
     if (isStopped) return
@@ -59,7 +60,6 @@ export function createTunnel({
 
     socket.on('open', () => {
       reconnectAttempt = 0
-      console.log('Connecting to expoz server...')
       socket.send(JSON.stringify({ type: 'register', tunnelId }))
     })
 
@@ -93,7 +93,7 @@ export function createTunnel({
             host: `localhost:${port}`
           }
         }
-        const req = createLocalRequest(socket, msg.requestId, options)
+        const req = createLocalRequest(socket, msg.requestId, options, log)
         activeRequests.set(msg.requestId, req)
         return
       }
@@ -138,7 +138,7 @@ export function createTunnel({
           }
         }
 
-        const req = createLocalRequest(socket, msg.requestId, options)
+        const req = createLocalRequest(socket, msg.requestId, options, log)
         if (msg.body) req.write(Buffer.from(msg.body, 'base64'))
         req.end()
       }
@@ -146,6 +146,7 @@ export function createTunnel({
 
     socket.on('close', (code: number) => {
       if (isStopped) return
+      log(`WebSocket closed with code ${code}`)
 
       if (code === 1008) {
         const error = new Error('Server rejected the tunnel registration')
@@ -206,7 +207,13 @@ function terminalLink(url: string): string {
   return `\u001B]8;;${url}\u0007${url}\u001B]8;;\u0007`
 }
 
-function createLocalRequest(socket: WebSocket, requestId: string, options: ClientRequestArgs): http.ClientRequest {
+function createLocalRequest(
+  socket: WebSocket,
+  requestId: string,
+  options: ClientRequestArgs,
+  log: (message: string) => void
+): http.ClientRequest {
+  const startedAt = Date.now()
   const req = http.request(options, (res) => {
     socket.send(JSON.stringify({
       type: 'response_start',
@@ -224,11 +231,13 @@ function createLocalRequest(socket: WebSocket, requestId: string, options: Clien
       }), () => res.resume())
     })
     res.on('end', () => {
+      log(`${JSON.stringify(`${options.method} ${pathnameOnly(String(options.path || '/'))} HTTP/1.1`)} ${res.statusCode} ${Date.now() - startedAt}ms`)
       socket.send(JSON.stringify({ type: 'response_end', requestId }))
     })
   })
 
-  req.on('error', () => {
+  req.on('error', (error) => {
+    log(`${JSON.stringify(`${options.method} ${pathnameOnly(String(options.path || '/'))} HTTP/1.1`)} 502 ${Date.now() - startedAt}ms (${error.message})`)
     socket.send(JSON.stringify({
       type: 'response_start',
       requestId,
@@ -244,4 +253,15 @@ function createLocalRequest(socket: WebSocket, requestId: string, options: Clien
   })
 
   return req
+}
+
+function pathnameOnly(path: string): string {
+  return path.split('?')[0] || '/'
+}
+
+function formatTimestamp(date = new Date()): string {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const twoDigits = (value: number) => String(value).padStart(2, '0')
+
+  return `${twoDigits(date.getDate())}/${months[date.getMonth()]}/${date.getFullYear()} ${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}:${twoDigits(date.getSeconds())}`
 }

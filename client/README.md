@@ -22,6 +22,8 @@ expoz 3000 --reconnect-delay 5000 --max-reconnect-delay 30000
 # Exposed at: https://expoz.onrender.com/t/myapp
 ```
 
+The CLI prints connection details and request diagnostics by default, including request method, path, response status, and elapsed time. Query strings, headers, and bodies are not logged.
+
 ## Programmatic
 
 ```js
