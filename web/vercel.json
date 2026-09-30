@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/health",
+      "destination": "https://expoz.onrender.com/health"
+    },
+    {
+      "source": "/status",
+      "destination": "https://expoz.onrender.com/status"
+    },
+    {
+      "source": "/t/:path*",
+      "destination": "https://expoz.onrender.com/t/:path*"
+    }
+  ]
+}
