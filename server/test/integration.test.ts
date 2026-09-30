@@ -4,7 +4,7 @@ import http from 'node:http'
 import { once } from 'node:events'
 import { spawn, type ChildProcess } from 'node:child_process'
 import type { AddressInfo } from 'node:net'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 interface TunnelHandle {
   stop: () => void
@@ -57,9 +57,9 @@ test('proxies GET and POST requests through a real tunnel', async (t) => {
   })
   const localPort = await listen(localApp)
 
-  const tsxCli = new URL('../node_modules/tsx/dist/cli.mjs', import.meta.url).pathname
-  const serverProcess = spawn(process.execPath, [tsxCli, 'index.ts'], {
-    cwd: new URL('..', import.meta.url).pathname,
+  const serverEntryPath = fileURLToPath(new URL('../dist/index.js', import.meta.url))
+  const serverProcess = spawn(process.execPath, [serverEntryPath], {
+    cwd: fileURLToPath(new URL('../../', import.meta.url)),
     env: {
       ...process.env,
       BASE_URL: 'http://127.0.0.1:3001',
@@ -82,7 +82,11 @@ test('proxies GET and POST requests through a real tunnel', async (t) => {
   assert.match(homepage, /Your localhost,?<br>/)
   assert.match(homepage, /Start tunneling/)
 
-  const clientModulePath = pathToFileURL(new URL('../../client/index.ts', import.meta.url).pathname).href
+  const healthResponse = await fetch('http://127.0.0.1:3001/health')
+  assert.equal(healthResponse.status, 200)
+  assert.deepEqual(await healthResponse.json(), { ok: true })
+
+  const clientModulePath = pathToFileURL(fileURLToPath(new URL('../../client/index.ts', import.meta.url))).href
   const { createTunnel } = await import(clientModulePath) as {
     createTunnel: (options: CreateTunnelOptions) => TunnelHandle
   }
@@ -102,6 +106,9 @@ test('proxies GET and POST requests through a real tunnel', async (t) => {
     await new Promise((resolve) => setTimeout(resolve, 20))
   }
   assert.ok(publicUrl)
+  assert.equal(new URL(publicUrl).pathname, '/t/integration-test')
+  const legacyTunnelPath = await fetch('http://127.0.0.1:3001/integration-test/hello')
+  assert.equal(legacyTunnelPath.status, 404)
 
   const getResponse = await fetch(`${publicUrl}/hello?source=test`)
   assert.equal(getResponse.status, 200)

@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node --input-type=module -e \"import { cpSync } from 'node:fs'; cpSync('public', 'dist/public', { recursive: true })\"",
     "start": "npm run build && node dist/index.js",
-    "test": "tsx --test test/**/*.test.ts",
-    "test:integration": "tsx --test test/integration.test.ts"
+    "test": "npm run build && tsx --test test/**/*.test.ts",
+    "test:integration": "npm run build && tsx --test test/integration.test.ts"
   },
   "dependencies": {
     "express": "^4.18.0",

@@ -3,8 +3,8 @@ import { WebSocketServer } from 'ws'
 import type { WebSocket, RawData } from 'ws'
 import { createServer } from 'http'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { nanoid } from 'nanoid'
-import https from 'https'
 import type { Request, Response } from 'express'
 import type { RegisterMessage, ResponseMessage } from './protocol.js'
 import { Metrics } from './metrics.js'
@@ -34,10 +34,12 @@ const app = express()
 const server = createServer(app)
 const wss = new WebSocketServer({ noServer: true })
 
-const BASE_URL = process.env.BASE_URL || 'https://expoz.onrender.com'
+const BASE_URL = (process.env.BASE_URL || 'https://expoz.onrender.com').replace(/\/+$/, '')
+const KEEP_ALIVE_URL = process.env.KEEP_ALIVE_URL || BASE_URL
+const publicDirectory = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public')
 
 const keepAlive = setInterval(() => {
-  https.get(BASE_URL).on('error', () => {})
+  void fetch(KEEP_ALIVE_URL).catch(() => {})
 }, 14 * 60 * 1000)
 keepAlive.unref()
 
@@ -91,10 +93,10 @@ wss.on('connection', (ws: WebSocket) => {
       ws.send(JSON.stringify({
         type: 'connected',
         tunnelId,
-        url: `${BASE_URL}/${tunnelId}`
+        url: `${BASE_URL}/t/${tunnelId}`
       }))
 
-      log('info', 'tunnel_connected', { tunnelId, url: `${BASE_URL}/${tunnelId}` })
+      log('info', 'tunnel_connected', { tunnelId, url: `${BASE_URL}/t/${tunnelId}` })
 
       ws.on('message', (data: RawData) => {
         const msg = parseJsonMessage(rawDataToBuffer(data))
@@ -170,13 +172,11 @@ wss.on('connection', (ws: WebSocket) => {
   })
 })
 
-// reserved routes
-app.get('/', (req, res) => res.sendFile(path.join(process.cwd(), 'public', 'index.html')))
+app.get('/', (req, res) => res.sendFile(path.join(publicDirectory, 'index.html')))
 app.get('/health', (req, res) => res.json({ ok: true }))
 app.get('/status', (req, res) => res.json(metrics.snapshot()))
 
-// catch all - treat first segment as tunnel ID
-app.use('/:tunnelId', (req: Request, res: Response) => {
+app.use('/t/:tunnelId', (req: Request, res: Response) => {
   const tunnelId = Array.isArray(req.params.tunnelId) ? req.params.tunnelId[0] : req.params.tunnelId
   const client = clients.get(tunnelId)
 
@@ -199,12 +199,15 @@ app.use('/:tunnelId', (req: Request, res: Response) => {
     if (!res.headersSent) res.status(504).json({ error: 'Tunnel timeout' })
   }, 30000)
   client.pending.set(requestId, { response: res, timeout, responseStarted: false })
+  const incomingUrl = new URL(req.originalUrl, 'http://localhost')
+  const tunnelPrefix = `/t/${tunnelId}`
+  const localPath = incomingUrl.pathname.slice(tunnelPrefix.length) || '/'
 
   client.ws.send(JSON.stringify({
     type: 'request_start',
     requestId,
     method: req.method,
-    path: req.url.replace(`/${tunnelId}`, '') || '/',
+    path: `${localPath}${incomingUrl.search}`,
     headers: req.headers
   }))
 
@@ -229,6 +232,8 @@ app.use('/:tunnelId', (req: Request, res: Response) => {
     client.ws.send(JSON.stringify({ type: 'request_end', requestId }))
   })
 })
+
+app.use((req: Request, res: Response) => res.status(404).json({ error: 'Not found' }))
 
 server.listen(process.env.PORT || 3001, () => {
   log('info', 'server_started', {
