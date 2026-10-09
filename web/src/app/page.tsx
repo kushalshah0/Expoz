@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CopyCommand from "./CopyCommand";
 
 const features = [
   {
@@ -48,9 +49,6 @@ export default function Home() {
           <nav className="navigation" aria-label="Main navigation">
             <a href="#how">How it works</a>
             <a href="#features">Features</a>
-            <a className="status-link" href="/health">
-              <span className="status-dot" aria-hidden="true" /> Service status
-            </a>
           </nav>
         </div>
       </header>
@@ -59,10 +57,10 @@ export default function Home() {
         <section className="hero shell">
           <div className="hero-grid">
             <div className="hero-copy-block">
-              <p className="eyebrow">Local development infrastructure</p>
-              <h1>Your localhost,<br /><em>everywhere.</em></h1>
+              <p className="eyebrow">A tunnel for local development</p>
+              <h1>Make localhost<br /><em>public.</em></h1>
               <p className="hero-copy">
-                A fast, open-source HTTPS tunnel for demos, webhooks, and the moment your local app needs to meet the real internet.
+                Give any local app a secure public URL. No port forwarding, account setup, or configuration to maintain.
               </p>
               <div className="actions">
                 <a className="button button-primary" href="#install">
@@ -96,9 +94,9 @@ export default function Home() {
 
         <section className="section shell" id="features">
           <div className="section-heading">
-            <h2>Built for the<br />messy middle.</h2>
+            <h2>Made for the<br />development loop.</h2>
             <p>
-              The space between “it works on my machine” and “here, take a look.” Expoz keeps that handoff simple, inspectable, and yours.
+              Share work in progress, receive webhooks, and test integrations against the app running on your machine.
             </p>
           </div>
           <div className="feature-grid">
@@ -115,9 +113,9 @@ export default function Home() {
         <section className="how-section" id="how">
           <div className="shell section">
             <div className="section-heading">
-              <h2>The short route<br />to outside.</h2>
+              <h2>One connection.<br />Three steps.</h2>
               <p>
-                A small relay server connects the public internet to a client running beside your app. Your code stays local; the URL does not.
+                Expoz relays requests to your local server over a persistent connection. Your app stays local; its URL is public.
               </p>
             </div>
             <div className="steps-grid">
@@ -133,12 +131,42 @@ export default function Home() {
         </section>
 
         <section className="install-section shell" id="install">
-          <div className="install-band">
-            <h2>Ready when your<br />localhost is.</h2>
-            <p className="install-command">
-              <span>npm install -g @kushalshah0/expoz</span>
-              <span>expoz 3000</span>
-            </p>
+          <div className="install-intro">
+            <p className="eyebrow">Quick start</p>
+            <h2>Go public in<br />two commands.</h2>
+            <p className="install-description">Install Expoz once, then point it at the port your local app is using.</p>
+            <a className="package-link" href="https://www.npmjs.com/package/@kushalshah0/expoz">
+              View package on npm <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+          <div className="install-steps">
+            <article className="install-step">
+              <div className="install-step-heading">
+                <span className="install-step-number">01</span>
+                <h3>Install the CLI</h3>
+                <span className="install-step-note">One time</span>
+              </div>
+              <div className="install-command-row">
+                <pre className="install-command"><code>npm install -g @kushalshah0/expoz</code></pre>
+                <CopyCommand command="npm install -g @kushalshah0/expoz" />
+              </div>
+            </article>
+            <article className="install-step">
+              <div className="install-step-heading">
+                <span className="install-step-number">02</span>
+                <h3>Start a tunnel</h3>
+                <span className="install-step-note">Per project</span>
+              </div>
+              <div className="install-command-row">
+                <pre className="install-command"><code>expoz 3000</code></pre>
+                <CopyCommand command="expoz 3000" />
+              </div>
+              <p className="install-step-detail">Replace <code>3000</code> with your app&apos;s port. Choose a tunnel ID when prompted, or leave it blank to generate one.</p>
+            </article>
+            <div className="install-result">
+              <span><span className="status-dot" aria-hidden="true" /> Your app is now public</span>
+              <code>https://expoz.onrender.com/t/your-id</code>
+            </div>
           </div>
         </section>
       </main>
@@ -147,8 +175,6 @@ export default function Home() {
         <div className="shell footer-row">
           <span>expoz / open-source local tunnels</span>
           <nav className="footer-links" aria-label="Footer navigation">
-            <a href="/health">Health</a>
-            <a href="/status">Status</a>
             <a href="https://github.com/kushalshah0/Expoz">GitHub</a>
           </nav>
         </div>
