@@ -78,7 +78,7 @@ export default function Home() {
                 <span />
                 <span />
               </div>
-              <pre><span className="comment"># expose your local app</span>{"\n"}<span className="prompt">$</span> <span className="command">expoz 3000</span>{"\n\n"}<span className="comment"># your public URL is ready</span>{"\n"}<span className="terminal-url">https://expoz.onrender.com/t/demo</span>{"\n\n"}<span className="comment">connected / streaming / secure</span></pre>
+              <pre><span className="comment"># expose your local app</span>{"\n"}<span className="prompt">$</span> <span className="command">expoz 3000</span>{"\n\n"}<span className="comment"># your public URL is ready</span>{"\n"}<span className="terminal-url">https://expoz.vercel.app/t/demo</span>{"\n\n"}<span className="comment">connected / streaming / secure</span></pre>
             </div>
           </div>
         </section>
@@ -165,7 +165,7 @@ export default function Home() {
             </article>
             <div className="install-result">
               <span><span className="status-dot" aria-hidden="true" /> Your app is now public</span>
-              <code>https://expoz.onrender.com/t/your-id</code>
+              <code>https://expoz.vercel.app/t/your-id</code>
             </div>
           </div>
         </section>
